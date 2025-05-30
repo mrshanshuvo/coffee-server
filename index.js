@@ -6,12 +6,14 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Middlewares
 app.use(cors());
 app.use(express.json());
 
+// MongoDB connection URI
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ezlz7xu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+// Create MongoClient with Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -22,14 +24,12 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
+    // Connect to MongoDB
     await client.connect();
-
     const coffeesCollection = client.db("coffeeDB").collection("coffees");
 
+    // Coffee CRUD endpoints
     app.get("/coffees", async (req, res) => {
-      // const cursor = coffeesCollection.find();
-      // const result = await cursor.toArray();
       const result = await coffeesCollection.find().toArray();
       res.send(result);
     });
@@ -53,23 +53,13 @@ async function run() {
       const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
       const updatedCoffee = req.body;
-      const updatedDoc = {
-        $set: updatedCoffee,
-      };
-
-      // const updatedDoc = {
-      //     $set: {
-      //         name: updatedCoffee.name,
-      //         supplier: updatedCoffee.supplier
-      //     }
-      // }
+      const updatedDoc = { $set: updatedCoffee };
 
       const result = await coffeesCollection.updateOne(
         filter,
         updatedDoc,
         options
       );
-
       res.send(result);
     });
 
@@ -80,22 +70,25 @@ async function run() {
       res.send(result);
     });
 
-    // Send a ping to confirm a successful connection
+    // Ping MongoDB to confirm connection
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
   } finally {
-    // Ensures that the client will close when you finish/error
+    // Client will remain open (commented out close)
     // await client.close();
   }
 }
+
 run().catch(console.dir);
 
+// Basic route
 app.get("/", (req, res) => {
   res.send("Coffee server is getting hotter.");
 });
 
+// Start server
 app.listen(port, () => {
   console.log(`Coffee server is running on port ${port}`);
 });
